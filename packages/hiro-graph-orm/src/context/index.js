@@ -28,7 +28,7 @@ import {
 } from "./relations";
 import isPlainObject from "lodash.isplainobject";
 import Schema from "../schema";
-import Client from "hiro-graph-client";
+import Client from "@hiro-graph/client";
 
 //shorthand for creating the getCount/Ids/Vertices fetching functions
 const relationFetch = (ctx, method, relations, options = {}) =>
@@ -73,7 +73,7 @@ const noEntity = "_no_entity";
  */
 export default class Context {
     /**
-     *  @param {Client|object} clientSpec - This should be an `hiro-graph-client` `Client` object,
+     *  @param {Client|object} clientSpec - This should be an `@hiro-graph/client` `Client` object,
      *                                              or the constructor args to create one.
      *  @param {Schema|Array} schemaSpec - This should be a {@link Schema} or the constructor args to create one.
      *  @param {?Map} [cache=new&nbsp;Map()] - The vertex cache. Any object satisfying the `Map` interface should be OK.
@@ -122,11 +122,11 @@ export default class Context {
      *  This returns the vertex from the owner of the access token in use.
      *  @return {Promise<GraphVertex>}
      */
-    person() {
+    profile() {
         //this is a bit different.
         return fetchMe(this)
-            .then(this.fetchVertices(["person"]))
-            .then(me => me.getVertices("person").pop());
+            .then(me => me.fetchVertices(["profile"]))
+            .then(me => me.getVertices("profile").pop());
     }
 
     /**
@@ -159,6 +159,17 @@ export default class Context {
      */
     setCache(cache) {
         this._cache = cache;
+    }
+
+    /**
+     * Delete key from cache.
+     *
+     * Cache is private and should only expose limited funtions.
+     *
+     * @param {string} key
+     */
+    deleteFromCache(key) {
+        return this._cache.delete(key);
     }
 
     /**

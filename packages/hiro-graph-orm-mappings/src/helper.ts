@@ -35,11 +35,11 @@ export const flipRelationshipName = (value: string) => {
     return value;
 };
 
-const generateOutputs = (output: IOutput) => {
+export const generateOutputs = (output: IOutput) => {
     let imports = "";
     let exports = "";
     let singleExports = "";
-    const names: string[] = [];
+    const names: Array<{ name: string; fileName: string }> = [];
     const keys = Object.keys(output).sort((a, b) => {
         if (a === b) {
             return 0;
@@ -62,63 +62,43 @@ const generateOutputs = (output: IOutput) => {
             i === keys.length - 1 ? "" : ",\n"
         }`;
         singleExports += `exports.${safeName} = ${safeName}.default;`;
-        names.push(safeName);
+        names.push({ name: safeName, fileName });
     });
 
     return { imports, exports, singleExports, names };
 };
 
-export const createTypings = (output: IOutput) => {
-    const { names } = generateOutputs(output);
-    return `declare const mapping: Array<IDefinition>;
-export default mapping;
+const replaceAll = (o?: IDefinitionData, value = "string") =>
+    !o ? o : Object.assign({}, ...Object.keys(o).map(k => ({ [k]: value })));
 
-export interface IDefinitionData {
-    [index: string]: string;
+export const getDefinitionTypings = (o?: IDefinitionData) =>
+    !o ? "" : JSON.stringify(replaceAll(o)).replace(/"/g, "");
+
+export function toTypes() {
+    return (text: string) => {
+        // @ts-ignore
+        const value = this[text];
+
+        if (!value || !text) {
+            return "";
+        }
+
+        return text + ": " + getDefinitionTypings(value as IDefinitionData);
+    };
 }
 
-export interface IDefinition {
-    name: string;
-    ogit: string;
-    required?: IDefinitionData;
-    optional?: IDefinitionData;
-    relations?: IDefinitionData;
+export function toProp() {
+    return (text: string) => {
+        // @ts-ignore
+        const value = this[text] as object;
+
+        if (!value || !text) {
+            return "";
+        }
+
+        return Object.keys(value)
+            .filter(k => k !== "type")
+            .map(k => `${k}${text !== "required" ? "?" : ""}:any;`)
+            .join("\n");
+    };
 }
-
-export type MappedTypes =
-${names.map(n => `    | "${n}"`).join("\n")};
-
-${names.map(n => `export const ${n}: IDefinition;`).join("\n")}
-`;
-};
-
-export const createIndex = (output: IOutput) => {
-    const { imports, exports, singleExports } = generateOutputs(output);
-    return `"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-  value: true
-});
-
-${imports}
-
-exports.default = [
-${exports}
-];
-
-${singleExports}
-`;
-};
-
-export const createExport = (output: IDefinition) => {
-    return `"use strict";
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-
-exports.default = ${JSON.stringify(output, null, 2)}
-`;
-};
-
-// \nexport default [\n${exports}\n];

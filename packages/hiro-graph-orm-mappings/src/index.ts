@@ -1,18 +1,14 @@
 import fs from "fs";
 import { join } from "path";
 import shell from "shelljs";
+import Mustache from "mustache";
+
 import {
     getRequiredAttributes,
     getOptionalAttributes,
     getRelations
 } from "./regex";
-import {
-    getName,
-    createIndex,
-    flipRelationshipName,
-    createTypings,
-    createExport
-} from "./helper";
+import { getName, flipRelationshipName, toTypes, toProp } from "./helper";
 import { mapRelationship } from "./relations";
 
 import config from "../config.json";
@@ -37,8 +33,7 @@ const addRelation = (v: string[], from: string) => {
     const right = from.split("/").pop() || "";
 
     if (!left || !right) {
-        console.error(`Failed to add relation: ${v} [${from}]`);
-        return;
+        throw Error(`Failed to add relation: ${v} [${from}]`);
     }
 
     const relationship = v[0] + " <- " + from;
@@ -65,7 +60,10 @@ const createMapping = (namespace: string, name: string): IDefinition => {
 
     const currentValue = output[ogit];
     const required = getRequiredAttributes(data);
-    const optional = getOptionalAttributes(data);
+
+    // @ts-ignore
+    const additionalData = config.extras[ogit] || {};
+    const optional = { ...getOptionalAttributes(data), ...additionalData };
     const relations = getRelations(
         data,
         ogit,
@@ -164,24 +162,69 @@ const output: IOutput = {};
     console.log("Create build dir:", config.OUTPUT_DIR);
     fs.mkdirSync(config.OUTPUT_DIR);
 
-    console.log("Generate library files");
+    // Write each mapping to a mapping file, typings and GraphVertex
+    const templates = {
+        mapping: fs.readFileSync("./src/templates/mapping.mustache").toString(),
+        mappingTypes: fs
+            .readFileSync("./src/templates/mappingTypes.mustache")
+            .toString(),
+        index: fs.readFileSync("./src/templates/index.mustache").toString(),
+        typings: fs.readFileSync("./src/templates/typings.mustache").toString()
+    };
+    const exports: Array<{ name: string; fileName: string }> = [];
+
     Object.keys(output).map(key => {
-        const name = key
+        const fileName = key
             .toLowerCase()
             .replace("ogit/", "")
             .replace(/\//g, "-");
+        const name = output[key].name.replace(/-|\//g, "");
+
+        // Export js
         fs.writeFileSync(
-            config.OUTPUT_DIR + "/" + name + ".js",
-            createExport(output[key])
+            join(config.OUTPUT_DIR, `${fileName}.js`),
+            Mustache.render(templates.mapping, {
+                mapping: JSON.stringify(output[key])
+            })
         );
+
+        // Export types
+        const props = [
+            ...Object.keys(output[key].optional || {}),
+            ...Object.keys(output[key].required || {})
+        ]
+            .map(k => `"${k}"`)
+            .join("|");
+
+        fs.writeFileSync(
+            join(config.OUTPUT_DIR, `${fileName}.d.ts`),
+            Mustache.render(templates.mappingTypes, {
+                name,
+                required: output[key].required,
+                optional: output[key].optional,
+                relations: output[key].relations,
+                relationKeys: Object.keys(output[key].relations || {}),
+                props: props || `""`,
+                toTypes,
+                toProp
+            })
+        );
+        exports.push({ name, fileName });
     });
 
-    console.log("Generate index.js");
-    fs.writeFileSync(config.OUTPUT_DIR + "/index.js", createIndex(output));
-
-    console.log("Generate typings");
+    // Create index.js
     fs.writeFileSync(
-        config.OUTPUT_DIR + "/typings.d.ts",
-        createTypings(output)
+        join(config.OUTPUT_DIR, `index.js`),
+        Mustache.render(templates.index, {
+            exports
+        })
+    );
+
+    // Create index.d.ts
+    fs.writeFileSync(
+        join(config.OUTPUT_DIR, `index.d.ts`),
+        Mustache.render(templates.typings, {
+            exports
+        })
     );
 })();

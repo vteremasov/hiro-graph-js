@@ -1,19 +1,22 @@
 {
-    "name": "hiro-graph-redux",
-    "version": "1.1.1",
+    "name": "@hiro-graph/redux",
+    "version": "1.1.18",
     "repository": "arago/hiro-graph-js",
-    "description": "Redux awareness for the `hiro-graph-orm` package",
+    "description": "Redux awareness for the `@hiro-graph/orm` package",
     "main": "lib/index.js",
+    "types": "index.d.ts",
     "scripts": {
         "build": "rm -rf lib/* && BABEL_ENV=production babel src --out-dir lib --source-maps",
-        "prepublish": "yarn build",
+        "prepublish": "yarn test && yarn build",
         "test": "jest --silent"
     },
     "license": "MIT",
     "dependencies": {
-        "hiro-graph-client": "^1.0.1",
-        "hiro-graph-implicit-oauth": "^1.1.1",
-        "hiro-graph-orm": "^1.0.2",
+        "@arago/eslint-config-arago": "github:arago/eslint-config-arago",
+        "@hiro-graph/client": "^1.1.2",
+        "@hiro-graph/implicit-oauth": "^1.1.4",
+        "@hiro-graph/orm": "^1.0.40",
+        "eslint": "^5.3.0",
         "lodash.isplainobject": "^4.0.6",
         "redux": "^4.0.0",
         "reselect": "^4.0.0"
@@ -21,7 +24,7 @@
     "devDependencies": {
         "babel-cli": "^6.6.5",
         "babel-jest": "^23.4.2",
-        "babel-preset-hiro": "^0.4.0",
+        "babel-preset-hiro": "^0.4.1",
         "jest": "^23.5.0"
     },
     "babel": {
@@ -43,5 +46,8 @@
         "transform": {
             "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
         }
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }

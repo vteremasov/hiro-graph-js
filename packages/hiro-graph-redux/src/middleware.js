@@ -17,9 +17,9 @@ import {
 import { getMyId, $inflateVertex } from "./reducer";
 import ReduxToken from "./token";
 import { cancelablePromise } from "./utils";
-import { isUnknown } from "hiro-graph-client/lib/errors";
-import Context from "hiro-graph-orm";
-import GraphVertex, { mergeRelations } from "hiro-graph-orm/lib/vertex/graph";
+import { isUnknown } from "@hiro-graph/client/lib/errors";
+import Context from "@hiro-graph/orm";
+import GraphVertex, { mergeRelations } from "@hiro-graph/orm/lib/vertex/graph";
 import isPlainObject from "lodash.isplainobject";
 
 const removeFromArray = (item, array) => {

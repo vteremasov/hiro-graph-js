@@ -21,6 +21,9 @@ import EventStream from "./eventstream";
 import subscriberFanout from "./subscriber-fanout";
 import timer from "./timer";
 
+import authServlet from "./servlets/auth";
+import apiServlet from "./servlets/api";
+
 const passthru = fn => [
     r => (fn(), r),
     e => {
@@ -42,7 +45,7 @@ const dereference = obj => {
 };
 
 export default class Client {
-    constructor({ endpoint, token }, transportOptions = {}) {
+    constructor({ endpoint, token }, transportOptions = {}, proxies = []) {
         this.endpoint = endpoint;
 
         //we hold on to the token for ease of access/manual invalidation
@@ -72,6 +75,8 @@ export default class Client {
 
         // Bind our fetch for extension servlets.
         this.fetch = (...args) => this.http.fetch(this.token, ...args);
+        this.proxyFetch = proxy => (url, ...args) =>
+            this.fetch(`${proxy}${url}`, ...args);
 
         this._dedup = Object.create(null);
 
@@ -79,6 +84,20 @@ export default class Client {
         this._servlets = [];
 
         this._pubsub = subscriberFanout();
+
+        // Auth API
+        this.addServlet(
+            "auth",
+            authServlet,
+            proxies.length >= 1 ? proxies[0] : ""
+        );
+
+        // Global API
+        this.addServlet(
+            "api",
+            apiServlet,
+            proxies.length >= 2 ? proxies[1] : ""
+        );
     }
 
     // NB this is not held anywhere in this instance, but returned
@@ -574,20 +593,45 @@ export default class Client {
     /**
      *  Returns previous versions of a vertex
      */
-    history(id, { offset = false, limit = false } = {}) {
+    history(
+        id,
+        {
+            offset = false,
+            limit = false,
+            from = false,
+            to = false,
+            version = false,
+            type = false
+        } = {}
+    ) {
         const headers = { "ogit/_id": id };
+        const body = {};
         if (offset !== false) {
-            headers.offset = offset;
+            body.offset = offset;
         }
         if (limit !== false) {
-            headers.limit = limit;
+            body.limit = limit;
         }
+        if (from !== false) {
+            body.from = from;
+        }
+        if (to !== false) {
+            body.to = to;
+        }
+        if (version !== false) {
+            body.version = version;
+        }
+        if (type !== false) {
+            body.type = type;
+        }
+
         return this.wrapTimedEvent(
             "history",
-            { id, offset, limit },
+            { id, ...body },
             this.dedupedRequest({
                 type: "history",
-                headers: headers
+                headers: headers,
+                body
             })
         );
     }
@@ -601,7 +645,7 @@ export default class Client {
      *  - `options` the default fetch options you can override
      *  - `...args` the rest of the args passed in by the user for that method
      */
-    addServlet(prefix, servletMethods) {
+    addServlet(prefix, servletMethods, proxy) {
         if (!prefix) {
             throw new Error("[GRAPH] Must give prefix for servlet");
         }
@@ -612,6 +656,9 @@ export default class Client {
                     "`"
             );
         }
+
+        const fetch = proxy ? this.proxyFetch(proxy) : this.fetch;
+
         //create namespace.
         this[prefix] = {};
         //add servlet methods
@@ -621,7 +668,7 @@ export default class Client {
                 return this.wrapTimedEvent(
                     "servlet-" + method,
                     { args },
-                    call(this.fetch, this.http.defaultOptions(), ...args).catch(
+                    call(fetch, this.http.defaultOptions(), ...args).catch(
                         err => {
                             //these are the special cases.
                             //regular errors end up with code === undefined, so not retryable.
@@ -643,7 +690,7 @@ export default class Client {
                             //a chance to retry - only once.
                             if (err.isRetryable) {
                                 return servletMethods[method](
-                                    this.fetch,
+                                    fetch,
                                     this.http.defaultOptions(),
                                     ...args
                                 );

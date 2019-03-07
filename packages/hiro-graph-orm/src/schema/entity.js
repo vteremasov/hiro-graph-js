@@ -3,7 +3,7 @@
  *  convert database database results into application data and
  *  application queries into database format
  */
-import codec from "hiro-graph-codecs";
+import codec from "@hiro-graph/codecs";
 
 const stringCodec = codec.string;
 const listCodec = codec.list;
@@ -160,6 +160,20 @@ const internalProps = [
         dst: "_content",
         encode: stringCodec.encode,
         decode: stringCodec.decode,
+        required: false
+    },
+    {
+        src: "ogit/_organization",
+        dst: "_organization",
+        encode: stringCodec.encode,
+        decode: stringCodec.decode,
+        required: false
+    },
+    {
+        src: "ogit/_owner",
+        dst: "_owner",
+        encode: listCodec.encode,
+        decode: listCodec.decode,
         required: false
     },
     {

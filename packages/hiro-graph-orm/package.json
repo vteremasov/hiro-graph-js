@@ -1,27 +1,27 @@
 {
     "name": "@hiro-graph/orm",
-    "version": "1.0.6",
+    "version": "1.0.40",
     "description": "OGIT ontology to sane application mappings",
     "repository": "arago/hiro-graph-js",
     "main": "lib/index.js",
+    "types": "index.d.ts",
     "scripts": {
         "build": "rm -rf lib/* && BABEL_ENV=production babel src --out-dir lib",
-        "prepublish": "yarn build",
+        "prepublish": "yarn test && yarn build",
         "test": "jest --silent"
     },
-    "types": "typings.d.ts",
     "license": "MIT",
     "dependencies": {
-        "hiro-graph-client": "^1.0.1",
-        "hiro-graph-codecs": "^1.0.0",
-        "hiro-graph-gremlin": "^1.0.1",
-        "hiro-graph-lucene": "^1.0.0",
+        "@hiro-graph/client": "^1.1.2",
+        "@hiro-graph/codecs": "^1.0.1",
+        "@hiro-graph/gremlin": "^1.0.4",
+        "@hiro-graph/lucene": "^1.0.1",
         "lodash.isplainobject": "^4.0.6"
     },
     "devDependencies": {
         "babel-cli": "^6.6.5",
         "babel-jest": "^23.4.2",
-        "babel-preset-hiro": "^0.4.0",
+        "babel-preset-hiro": "^0.4.1",
         "jest": "^23.5.0"
     },
     "babel": {
@@ -43,5 +43,8 @@
         "transform": {
             "^.+\\.(js|jsx)$": "<rootDir>/node_modules/babel-jest"
         }
+    },
+    "publishConfig": {
+        "access": "public"
     }
 }

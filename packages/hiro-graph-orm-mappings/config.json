@@ -1,11 +1,7 @@
 {
-    "OGIT": "../../../OGIT/NTO",
+    "OGIT": "./node_modules/@arago/OGIT/NTO",
     "OUTPUT_DIR": "lib",
     "blacklist": [
-        "Factory",
-        "Forum",
-        "MRP",
-        "Network",
         "oslc-arch",
         "oslc-asset",
         "oslc-automation",
@@ -18,15 +14,26 @@
         "oslc-rddl",
         "oslc-reqman"
     ],
+    "extras": {
+        "ogit/Auth/AccountProfile": {
+            "defaultOrg": "/defaultOrg",
+            "jobRole": "/jobRole",
+            "profilePicture": "/profilePicture",
+            "profileSet": "/profileSet"
+        }
+    },
     "mapping": {
         "ogit/Auth/belongs -> ogit/Auth/Account": "account",
+        "ogit/Auth/isMemberOf <- ogit/Auth/Account": "members",
         "ogit/Auth/belongs -> ogit/Auth/Organization": "parentOrg",
         "ogit/Auth/belongs <- ogit/Auth/AccountProfile": "profile",
-        "ogit/Auth/isMemberOf -> ogit/Auth/Organization": "org",
-        "ogit/Auth/isMemberOf -> ogit/Auth/Team": "team",
+        "ogit/Auth/isMemberOf -> ogit/Auth/Organization": "orgs",
+        "ogit/Auth/isMemberOf -> ogit/Auth/Team": "teams",
         "ogit/belongs -> ogit/Organization": "orgs",
         "ogit/belongs -> ogit/Person": "person",
         "ogit/belongs <- ogit/Person": "members",
+        "ogit/owns -> ogit/Certificate": "certificates",
+        "ogit/owns -> ogit/Asset": "assets",
         "ogit/complies -> ogit/Person": "owner",
         "ogit/complies -> ogit/Role": "roles",
         "ogit/connects -> ogit/Hyperlink": "links",
@@ -55,6 +62,8 @@
         "ogit/uses <- ogit/Person": "people",
         "ogit/uses <- ogit/Person|ogit/Organization": "users",
         "ogit/versions <- ogit/Auth/Application": "parentVersion",
-        "ogit/versions -> ogit/Auth/Application": "appVersion"
+        "ogit/versions -> ogit/Auth/Application": "appVersion",
+        "ogit/consistsOf <- ogit/MRP/Part": "item",
+        "ogit/consistsOf -> ogit/MRP/Part": "parts"
     }
 }
