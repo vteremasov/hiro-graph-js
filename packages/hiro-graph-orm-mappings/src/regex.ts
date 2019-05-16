@@ -19,6 +19,10 @@ export function getData(regex: RegExp, input: string): string[] {
         .map(v => v.replace(/\./g, "/").replace(/:/g, "/"));
 }
 
+function cleanName(name: string) {
+    return name.replace(/-/g, "_");
+}
+
 function getAttributes(regex: RegExp, input: string) {
     const data = getData(regex, input);
     const output: IDefinitionData = {};
@@ -28,7 +32,8 @@ function getAttributes(regex: RegExp, input: string) {
         if (!name) {
             continue;
         }
-        output[name] = v;
+
+        output[cleanName(name)] = v;
     }
 
     return output;
